@@ -1,4 +1,6 @@
 from django.db import models
+
+from school.validators import validate_youtube_link
 from users.models import User
 from django.core.validators import MinValueValidator
 
@@ -7,6 +9,8 @@ class Course(models.Model):
     title = models.CharField(max_length=255)
     preview_image = models.ImageField(upload_to='course_previews/', blank=True, null=True)
     description = models.TextField()
+    user = models.ForeignKey(User, related_name='courses', on_delete=models.CASCADE)
+    subscribers = models.ManyToManyField(User, through='Subscription')
 
     def __str__(self):
         return self.title
@@ -20,9 +24,10 @@ class Lesson(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     preview_image = models.ImageField(upload_to='lesson_previews/', blank=True, null=True)
-    video_link = models.URLField()
+    video_link = models.URLField(validators=[validate_youtube_link])
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lessons')
 
     def __str__(self):
         return self.title
@@ -48,3 +53,7 @@ class Payment(models.Model):
         verbose_name_plural = 'платежи'
 
 
+class Subscription(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    subscribed_at = models.DateTimeField(auto_now_add=True)
